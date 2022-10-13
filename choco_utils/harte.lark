@@ -1,0 +1,25 @@
+?start: chord
+
+%import common.WS
+%ignore WS
+%ignore " "
+
+NOTE: "A".."G"
+DEGREE: "1" |"2" | "3" | "4" | "5" | "6" | "7" | "9" | "11" | "12" | "13" | "14" | "15"
+sharp: "#"
+flat: "b"
+star: "*"
+
+shorthand: "7" | "9" | "maj" | "min" | "dim" | "aug" | "sus4" | "minmaj7" | "dim7" | "hdim7" | "maj7" | "min7" | "maj9" | "min9" |"maj6" | "min6" |
+?alter: sharp | flat
+altered_note: NOTE alter*
+root: altered_note
+
+?first_degree: star? alter* DEGREE
+?following_degrees: "," star? alter* DEGREE
+degree: first_degree following_degrees+
+degrees: "(" degree ")"
+
+slash: "/" altered_note
+
+chord: root ":" shorthand? degrees? slash?
