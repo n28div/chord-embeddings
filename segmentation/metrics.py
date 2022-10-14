@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import make_scorer
+from sklearn.metrics import confusion_matrix
 import itertools
 
 def pairwise_metrics(annotated, predicted):
@@ -19,55 +19,27 @@ def pairwise_metrics(annotated, predicted):
   return precision, recall, f1
 
 
-def under_over_segmentation(annotated, predicted, acc: str = None):
+def under_over_segmentation(annotated, predicted, smoothing_alpha: float  = 1e-100):
   # evaluate according to Lukashevich (IMIR, 2008)
-  N = len(annotated)
-  positions_A = [(label, np.where(annotated == label)[0]) for label in np.unique(annotated)]
-  positions_P = [(label, np.where(predicted == label)[0]) for label in np.unique(predicted)]
+  L_a = len(np.unique(annotated))
+  L_e = len(np.unique(predicted))
+  F = len(annotated)
+  cm = confusion_matrix(annotated, predicted)
 
-  N_A = len(positions_A)
-  N_P = len(positions_P)
+  # compute joint and marginal distributions
+  P = (cm + smoothing_alpha) / (F + (L_a * L_e * smoothing_alpha))
+  P_a = P.sum(axis=0) / F
+  P_e = P.sum(axis=1) / F
 
-  # compute joint probability
-  n = np.zeros((N_A, N_P))
-  for i, i_elem in positions_A:
-    for j, j_elem in positions_P:
-      n[i, j] = len(np.intersect1d(i_elem, j_elem))
-  p = n / n.sum()
+  # compute conditional distributions
+  P_ae = (cm + smoothing_alpha) / (cm.sum(axis=1) + (L_a * smoothing_alpha))
+  P_ea = (cm + smoothing_alpha) / (cm.sum(axis=0) + (L_e * smoothing_alpha))
 
-  # compute single probabilities
-  n_A = np.array([len(elem) for _, elem in positions_A])
-  p_A = n_A / n.sum()
-  n_P = np.array([len(elem) for _, elem in positions_P])
-  p_P = n_P / n.sum()
+  # compute conditional entropies
+  H_ea = -1 * (P_a * (P_ea * np.log2(P_ea)).sum(axis=0)).sum()
+  H_ae = -1 * (P_e * (P_ae * np.log2(P_ae)).sum(axis=1)).sum()
 
-  # compute entropies
-  h_EA = 0
-  for i, _ in positions_A:
-    partial = 0
-    for j, _ in positions_P:
-      p_ji_EA = n[i, j] / n_A[i]
-      partial += p_ji_EA * np.log2(p_ji_EA + 1e-50)
-    h_EA += p_A[i] * partial
-  h_EA = - h_EA
-
-  h_AE = 0
-  for j, _ in positions_P:
-    partial = 0
-    for i, _ in positions_A:
-      p_ij_AE = n[i, j] / n_P[j]
-      partial += p_ij_AE * np.log2(p_ij_AE + 1e-50)
-    h_AE += p_P[j] * partial
-  h_AE = -h_AE
-
-  over_segmentation = max(0, 1 - (h_EA / (np.log2(N_P + 1e-50) + 1e-50)))
-  under_segmentation = max(0, 1 - (h_AE / (np.log2(N_A + 1e-50) + 1e-50)))
-
-  if acc == "sum":
-    score = over_segmentation + under_segmentation
-  elif acc == "mean":
-    score = (over_segmentation + under_segmentation) / 2
-  else:
-    score = (over_segmentation, under_segmentation)
+  over_segmentation = 1 - (H_ea / np.log2(L_e)).clip(0, 1)
+  under_segmentation = 1 - (H_ae / np.log2(L_a)).clip(0, 1)
   
-  return score
+  return under_segmentation, over_segmentation
