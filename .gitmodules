@@ -1,3 +1,0 @@
-[submodule "choco"]
-	path = choco
-	url = git@github.com:smashub/choco.git
