@@ -13,7 +13,7 @@ chord: note ":" SHORTHAND ("(" degree_list ")")? ("/" bass)?
 note: NATURAL | NATURAL MODIFIER
 NATURAL: "A" | "B" | "C" | "D" | "E" | "F" | "G"
 MODIFIER: "b" | "#"
-NA: "N"
+NA: "N" | "X"
 bass: degree
 degree_list: degree ("," degree)*
 degree: MISSING? MODIFIER* INTERVAL
@@ -22,6 +22,7 @@ INTERVAL: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "1
 SHORTHAND: "maj" | "min" | "dim" | "aug" | "maj7" | "min7" | "7" | "dim7" | "hdim7"
          | "minmaj7" | "maj6" | "min6" | "9" | "maj9" | "min9" | "sus4"
          | "hdim" |"sus2" | "min11" | "maj11" | "11" | "min13" | "maj13" | "13"
+         | "5" | "1"
 %ignore " "
 """
 
@@ -85,6 +86,8 @@ SHORTHAND_COMPONENTS = {
   "13": ["3", "5", "b7", "9", "11"],
   "maj13": ["3", "5", "7", "9", "11", "13"],
   "min13": ["b3", "5", "b7", "9", "11", "13"],
+  "5": ["5"],
+  "1": []
 }
 
 # idx is the pitch of the note, where 0 is C ans 10 is B
