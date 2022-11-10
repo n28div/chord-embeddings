@@ -102,7 +102,10 @@ class RootIntervalDataset(ChocoChordDataset):
     Returns:
         List[np.array]: List of encoded components of the chord.
     """
-    pc = chord_to_pitchclass(chord)
+    try:
+      pc = chord_to_pitchclass(chord)
+    except:
+      pc = chord_to_pitchclass("N")
 
     if len(pc) != 0:
       intervals = [(pc[0], elem) for elem in pc]
