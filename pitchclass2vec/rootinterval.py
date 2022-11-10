@@ -76,9 +76,9 @@ class RootIntervalModel(pl.LightningModule):
     optimizer = torch.optim.Adam(self.parameters(), lr=0.1)
     scheduler = {
       "scheduler": torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=10),
+        optimizer, mode="min", factor=0.5, patience=2),
       "monitor": "train/loss",
-      "interval": "step" }
+      "interval": "epoch" }
     return [optimizer], scheduler
 
   def __getitem__(self, chord: str) -> np.array:
