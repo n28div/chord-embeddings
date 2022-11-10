@@ -61,9 +61,13 @@ class ChocoChordDataset(torch.utils.data.Dataset):
     elem_idx = idx - self._doc_buckets[bucket_idx - 1]
 
     # take the positive examples: i.e. those documents that falls within the context window
-    left_context_elems = max(-1 * elem_idx, -1 * self.c) # available left elements
-    right_context_elems = min(doc_len - elem_idx, self.c) # available right elements
-    positive_idxs = np.arange(left_context_elems, right_context_elems) + elem_idx
+    if self.c == -1:
+      # infinite context
+      positive_idxs = np.arange(doc_len)
+    else:
+      left_context_elems = max(-1 * elem_idx, -1 * self.c) # available left elements
+      right_context_elems = min(doc_len - elem_idx, self.c) # available right elements
+      positive_idxs = np.arange(left_context_elems, right_context_elems) + elem_idx
 
     # negative examples are indexes that falls out of the positive indexes
     # based on https://tech.hbc.com/2018-03-23-negative-sampling-in-numpy.html
