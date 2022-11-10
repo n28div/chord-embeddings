@@ -4,7 +4,7 @@ import os
 from os import path as osp
 import collections
 from lark import Lark
-from harte2vec.harte import HARTE_LARK_GRAMMAR
+from pitchclass2vec.harte import HARTE_LARK_GRAMMAR
 
 ChoCoDocument = collections.namedtuple("ChoCoDocument", ["annotations", "source", "jams"])
 HarteAnnotation = collections.namedtuple("HarteAnnotation", ["symbol", "duration"])
@@ -15,35 +15,26 @@ class ChoCoCorpus(object):
   Iterate over all documents contained in ChoCo to retrieve jams files.
   """
 
-  def __init__(self, choco_path: str):
+  def __init__(self, choco_data_path: str):
     """
     Args:
-        choco_path (str): Path to ChoCo directory.
+        choco_data_path (str): Path to ChoCo data directory containing jams files.
     """
-    partitions_path = osp.join(choco_path, "partitions")
-    self.partitions_paths = [osp.join(partitions_path, p, "choco") for p in os.listdir(partitions_path)]
+    self.data_path = osp.join(choco_data_path, "jams")
 
-  def _jams_in_partition(self, partition_path: str) -> Iterator[str]:
+  def _read_jams(self, path: str) -> jams.JAMS:
     """
-    Iterate over all the jams file in a partition.
-    Automatically taked the converted chords if chords are not in Harte encoding.
+    Read the jams file from the specified directory. By default validation
+    is not enforces.
 
     Args:
-        partition_path (str): The path to the ChoCo partition.
+        path (str): Path of the .jams file.
 
-    Yields:
-        Iterator[str]: Path to jams file contained in the partition.
+    Returns:
+        jams.JAMS: JAMS object
     """
-    partition_dirs = os.listdir(partition_path)
-    jams_dir = "jams-converted" if "jams-converted" in partition_dirs else "jams"
-    jams_path = osp.join(partition_path, jams_dir)
-    
-    jams_files = os.walk(jams_path)
-    for (root, _, files) in jams_files:
-      for file in files:
-        file_path = osp.join(root, file)
-        yield file_path
-  
+    return jams.load(path, validate=False)
+
   def __iter__(self) -> Iterator[jams.JAMS]:
     """
     Iterate over all chords progressions.
@@ -53,30 +44,36 @@ class ChoCoCorpus(object):
     Yields:
         Iterator[jams.JAMS]: Loaded JAMS file.
     """
-    for partition_path in self.partitions_paths:
-      for jam_path in self._jams_in_partition(partition_path):
-        yield jams.load(jam_path, validate=False)
+    jams_files = os.walk(self.data_path)
+
+    for (root, _, files) in jams_files:
+      for file in files:
+        yield self._read_jams(osp.join(root, file))
 
 
 class ChoCoHarteAnnotationsCorpus(ChoCoCorpus):
   """
   Iterate over all documents contained in ChoCo to retrieve chords in Harte format.
   """
-  def __iter__(self) -> Iterator[List[ChoCoDocument]]:
+  def _read_jams(self, path: str) -> jams.JAMS:
     """
-    Yields:
-        Iterator[List[HarteAnnotation]]: Progression of chords in Harte format.
+    Read the jams file from the specified directory. By default validation
+    is not enforces.
+
+    Args:
+        path (str): Path of the .jams file.
+
+    Returns:
+        jams.JAMS: JAMS object
     """
-    for partition_path in self.partitions_paths:
-      for jam_path in self._jams_in_partition(partition_path):
-        jam = jams.load(jam_path, validate=False)
-        namespaces = [ str(a.namespace) for a in jam.annotations ]
+    jam = jams.load(path, validate=False)
+    namespaces = [ str(a.namespace) for a in jam.annotations ]
         
-        chord_namespace = "chord_harte" if "chord_harte" in namespaces else "chord"
-        annotation = jam.search(namespace=chord_namespace)
-        observations = annotation[0].data
-        chords = [HarteAnnotation(obs.value, obs.duration) for obs in observations]
-        yield ChoCoDocument(chords, source=jam_path, jams=jam)
+    chord_namespace = "chord_harte" if "chord_harte" in namespaces else "chord"
+    annotation = jam.search(namespace=chord_namespace)
+    observations = annotation[0].data
+    chords = [HarteAnnotation(obs.value, obs.duration) for obs in observations]
+    return ChoCoDocument(chords, source=path, jams=jam)
 
 
 class ChoCoValidHarteChordsCorpus(ChoCoCorpus):
