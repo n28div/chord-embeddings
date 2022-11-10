@@ -25,7 +25,6 @@ parser.add_argument("--embedding-aggr", choices=["sum", "mean"], required=False,
 parser.add_argument("--context", type=int, required=False, default=5)
 parser.add_argument("--negative-sampling-k", type=int, required=False, default=20)
 parser.add_argument("--early-stop-patience", type=int, required=False, default=2)
-parser.add_argument("--wandb", type=str, required=False, default=None)
 
 args = parser.parse_args()
 
@@ -42,10 +41,18 @@ if __name__ == "__main__":
     negative_sampling_k=args.negative_sampling_k)
   
   model = model_cls(embedding_dim=args.embedding_dim, aggr=args.embedding_aggr)
+
+  wandb_group = args.encoding
+  wandb_tags = [
+    f"{args.embedding_dim} embedding",
+    f"{args.embedding_aggr} aggregation",
+    f"{args.context} context",
+    f"{args.negative_sampling_k} negative sampling k"
+  ]
     
   trainer = pl.Trainer(max_epochs=args.max_epochs, 
                        accelerator="auto",
-                       #logger=pl.loggers.WandbLogger(project="pitch2vec", name=args.wandb),
+                       logger=pl.loggers.WandbLogger(project="pitch2vec", group=wandb_group, tags=wandb_tags),
                        devices=1,
                        callbacks=[
                          pl.callbacks.LearningRateMonitor(logging_interval="step"),
