@@ -1,0 +1,2 @@
+from pitchclass2vec.model.fasttext import FasttextModel
+from pitchclass2vec.model.word2vec import Word2vecModel
