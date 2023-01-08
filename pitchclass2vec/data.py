@@ -9,7 +9,6 @@ import torch.nn as nn
 import pytorch_lightning as pl
 
 from choco.corpus import ChoCoDocument, ChoCoHarteAnnotationsCorpus
-from pitchclass2vec.harte import chord_to_pitchclass, pitchclass_to_onehot
 import jams
 
 class ChocoChordDataset(torch.utils.data.Dataset):

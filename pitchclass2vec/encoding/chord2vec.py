@@ -7,7 +7,8 @@ import torch.nn as nn
 import pytorch_lightning as pl
 
 from pitchclass2vec.data import ChocoChordDataset
-from pitchclass2vec.harte import chord_to_pitchclass, pitchclass_to_onehot
+from pitchclass2vec.encoding.utils import pitchclass_to_onehot
+from harte.harte import Harte
 
 class Chord2vecDataset(ChocoChordDataset):
   @staticmethod
@@ -25,11 +26,7 @@ class Chord2vecDataset(ChocoChordDataset):
     Returns:
         List[np.array]: List of encoded components of the chord.
     """
-    try:
-      pc = chord_to_pitchclass(chord)
-    except:
-      pc = chord_to_pitchclass("N")
-
+    pc = Harte(chord).pitchClasses
     onehot = pitchclass_to_onehot(pc)
     encoding = onehot.dot(2**np.arange(12)[::-1]).astype(int)
     return encoding

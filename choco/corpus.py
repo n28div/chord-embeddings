@@ -3,8 +3,7 @@ import jams
 import os
 from os import path as osp
 import collections
-from lark import Lark
-from pitchclass2vec.harte import HARTE_LARK_GRAMMAR
+from harte.harte import Harte
 
 ChoCoDocument = collections.namedtuple("ChoCoDocument", ["annotations", "source", "jams"])
 HarteAnnotation = collections.namedtuple("HarteAnnotation", ["symbol", "duration"])
@@ -85,8 +84,6 @@ class ChoCoValidHarteChordsCorpus(ChoCoCorpus):
     Yields:
         Iterator[List[HarteAnnotation]]: Progression of chords in Harte format.
     """
-    parser = Lark(HARTE_LARK_GRAMMAR, parser='lalr', start="chord")
-
     for partition_path in self.partitions_paths:
       for jam_path in self._jams_in_partition(partition_path):
         jam = jams.load(jam_path, validate=False)
@@ -97,7 +94,7 @@ class ChoCoValidHarteChordsCorpus(ChoCoCorpus):
         observations = annotation[0].data
         chords = [HarteAnnotation(obs.value, obs.duration) for obs in observations]
         try:
-          [parser.parse(ann.symbol) for ann in chords]
+          [Harte(ann.symbol) for ann in chords]
           yield ChoCoDocument(chords, source=jam_path, jams=jam)
         except:
           pass
