@@ -87,7 +87,8 @@ class ChocoChordDataset(torch.utils.data.Dataset):
     
     return source, target, y
 
-  def encode_chord(self, chord: str) -> np.array:
+  @staticmethod
+  def encode_chord(chord: str) -> np.array:
     """
     Encodes a chord. Need to be overridden to express the right behaviour.
 

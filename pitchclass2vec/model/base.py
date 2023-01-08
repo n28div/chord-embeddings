@@ -53,18 +53,17 @@ class BaseModel(pl.LightningModule):
       "interval": "epoch" }
     return [optimizer], scheduler
 
-  def __getitem__(self, chord: str) -> np.array:
+  def __getitem__(self, chord: np.array) -> np.array:
     """
     Compute the embedding of a chord.
 
     Args:
-        chord (str): Input chord
+        chord (np.array): Input chord already encoded
 
     Returns:
         np.array: Embedded chord.
     """
-    encoded = self.encode_chord(chord)
     with torch.no_grad():
-      embedded = self.embedding(torch.tensor(encoded).unsqueeze(0)).squeeze(0).numpy()
+      embedded = self.embedding(torch.tensor(chord).unsqueeze(0)).squeeze(0).numpy()
 
     return embedded
