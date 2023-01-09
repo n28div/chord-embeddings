@@ -70,9 +70,11 @@ class ChocoChordDataset(torch.utils.data.Dataset):
 
     # negative examples are indexes that falls out of the positive indexes
     # based on https://tech.hbc.com/2018-03-23-negative-sampling-in-numpy.html
-    negative_idxs = np.random.randint(0, len(self.vocab) - (2 * self.c + 1), size=self.k)
-    pos_idxs_adj = positive_idxs - np.arange(len(positive_idxs))
-    negative_idxs = negative_idxs + np.searchsorted(pos_idxs_adj, negative_idxs, side='right')
+    num_negatives = len(self.vocab) - (2 * self.c + 1) if self.c != -1 else len(self.vocab)
+    negative_idxs = np.random.randint(0, num_negatives, size=self.k)
+    if self.c != -1:
+      pos_idxs_adj = positive_idxs - np.arange(len(positive_idxs))
+      negative_idxs = negative_idxs + np.searchsorted(pos_idxs_adj, negative_idxs, side='right')
     
     # compute target as the set of encoded positives and negatives
     # and compute the label y as 1 for positives and 0 for negatives
