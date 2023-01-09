@@ -47,7 +47,10 @@ class ChoCoCorpus(object):
 
     for (root, _, files) in jams_files:
       for file in files:
-        yield self._read_jams(osp.join(root, file))
+        try:
+          yield self._read_jams(osp.join(root, file))
+        except:
+          pass
 
 
 class ChoCoHarteAnnotationsCorpus(ChoCoCorpus):
@@ -79,25 +82,26 @@ class ChoCoValidHarteChordsCorpus(ChoCoCorpus):
   """
   Iterate over all documents contained in ChoCo to retrieve valid chords in Harte format.
   """
-  def __iter__(self) -> Iterator[List[ChoCoDocument]]:
+  def _read_jams(self, path: str) -> jams.JAMS:
     """
-    Yields:
-        Iterator[List[HarteAnnotation]]: Progression of chords in Harte format.
+    Read the jams file from the specified directory. 
+    Raise exceprion if chords are not parsable.
+
+    Args:
+        path (str): Path of the .jams file.
+
+    Returns:
+        jams.JAMS: JAMS object
     """
-    for partition_path in self.partitions_paths:
-      for jam_path in self._jams_in_partition(partition_path):
-        jam = jams.load(jam_path, validate=False)
-        namespaces = [ str(a.namespace) for a in jam.annotations ]
+    jam = jams.load(path, validate=False)
+    namespaces = [ str(a.namespace) for a in jam.annotations ]
         
-        chord_namespace = "chord_harte" if "chord_harte" in namespaces else "chord"
-        annotation = jam.search(namespace=chord_namespace)
-        observations = annotation[0].data
-        chords = [HarteAnnotation(obs.value, obs.duration) for obs in observations]
-        try:
-          [Harte(ann.symbol) for ann in chords]
-          yield ChoCoDocument(chords, source=jam_path, jams=jam)
-        except:
-          pass
+    chord_namespace = "chord_harte" if "chord_harte" in namespaces else "chord"
+    annotation = jam.search(namespace=chord_namespace)
+    observations = annotation[0].data
+    chords = [HarteAnnotation(obs.value, obs.duration) for obs in observations]
+    [Harte(c.symbol) for c in chords]
+    return ChoCoDocument(chords, source=path, jams=jam)
 
 
 class ChoCoIsophonicsHarteCorpus(ChoCoCorpus):
