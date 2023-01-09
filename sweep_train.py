@@ -50,7 +50,7 @@ if __name__ == "__main__":
     config["parameters"]["config"]["value"] = args.config
     config["parameters"]["evaluation"]["value"] = args.evaluation
 
-    sweep_id = wandb.sweep(config, project=args.pitchclass2vec)
+    sweep_id = wandb.sweep(config, project=args.wandb)
     wandb.agent(sweep_id, function=run_training)
     
     df = pd.DataFrame(experiments)
