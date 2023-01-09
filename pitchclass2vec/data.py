@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
-from choco.corpus import ChoCoDocument, ChoCoHarteAnnotationsCorpus
+from choco.corpus import ChoCoDocument, ChoCoValidHarteChordsCorpus
 import jams
 
 class ChocoChordDataset(torch.utils.data.Dataset):
@@ -119,7 +119,7 @@ class ChocoChordDataset(torch.utils.data.Dataset):
 class ChocoDataModule(pl.LightningDataModule):
   def __init__(self, choco_data_path: str, dataset_cls: ChocoChordDataset, batch_size: int = 1024, context_size: int = 5, negative_sampling_k: int = 20):
     super().__init__()
-    self.corpus = ChoCoHarteAnnotationsCorpus(choco_data_path)
+    self.corpus = ChoCoValidHarteChordsCorpus(choco_data_path)
     self.dataset_cls = dataset_cls
     
     # batch size needs to be adjusted since each sample from the dataset is composed of
