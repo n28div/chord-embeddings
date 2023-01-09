@@ -9,7 +9,7 @@ from choco.corpus import ChoCoHarteAnnotationsCorpus
 from pitchclass2vec.data import ChocoDataModule
 import pitchclass2vec.encoding as encoding
 import pitchclass2vec.model as model
-from pitchclass2vec import Pitchclass2VecModel
+from pitchclass2vec.pitchclass2vec import Pitchclass2VecModel
 from gensim_evaluations.methods import odd_one_out
 
 
@@ -25,18 +25,19 @@ MODEL_MAP = {
 }
 
 def evaluate(encoding: str, model: str, path: str, config: str):
-    model = Pitchclass2VecModel(ENCODING_MAP[args.encoding], 
-                                MODEL_MAP[args.model],
-                                args.path)
+    model = Pitchclass2VecModel(ENCODING_MAP[encoding], 
+                                MODEL_MAP[model],
+                                path)
 
-    with open(args.config) as f:
+    with open(config) as f:
         config = json.load(f)
 
     metrics = {}
     metrics["odd_one_out"] = odd_one_out(
         { k: v for k, v in config.items() if k != "vocab" },
         model, 
-        vocab=config["vocab"]
+        vocab=config["vocab"],
+        k_in=4
     )
 
     return metrics
