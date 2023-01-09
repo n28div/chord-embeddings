@@ -54,7 +54,7 @@ class Word2vecModel(BaseModel):
     """
     source, target, y = batch
     pred = self._predict(source, target)
-    weight = compute_sample_weight("balanced", y)
+    weight = compute_sample_weight("balanced", y.cpu())
     loss = nn.functional.binary_cross_entropy_with_logits(pred, y.float(), torch.tensor(weight).to(pred.device))
     self.log("train/loss", loss)
     return loss
