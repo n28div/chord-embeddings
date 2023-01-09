@@ -47,7 +47,11 @@ class ChoCoCorpus(object):
 
     for (root, _, files) in jams_files:
       for file in files:
-        yield self._read_jams(osp.join(root, file))
+        try:
+          yield self._read_jams(osp.join(root, file))
+        except:
+          # FIXME: Chord couldn't be parsed.
+          pass
 
 
 class ChoCoHarteAnnotationsCorpus(ChoCoCorpus):
