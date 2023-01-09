@@ -12,6 +12,7 @@ arg_parser.add_argument("--out", type=str, required=True)
 arg_parser.add_argument("--config", type=str, required=True)
 arg_parser.add_argument("--evaluation", type=str, required=True)
 arg_parser.add_argument("--choco", type=str, required=True)
+arg_parser.add_argument("--wandb", type=str, default="pitchclass2vec")
 
 experiments = []
 BASE_EXPERIMENTS = None
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     config["parameters"]["config"]["value"] = args.config
     config["parameters"]["evaluation"]["value"] = args.evaluation
 
-    sweep_id = wandb.sweep(config, project="test")
+    sweep_id = wandb.sweep(config, project=args.pitchclass2vec)
     wandb.agent(sweep_id, function=run_training)
     
     df = pd.DataFrame(experiments)
