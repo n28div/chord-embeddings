@@ -1,4 +1,6 @@
 import argparse
+import os
+import json
 
 import torch
 import numpy as np
@@ -22,10 +24,28 @@ MODEL_MAP = {
 }
 
 
-def train(choco: str, encoding: str, model: str, out: str, seed: int = 42, batch_size: int = 32, context: int = 5,
+def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", seed: int = 42, batch_size: int = 32, context: int = 5,
           negative_sampling_k: int = 20, embedding_dim: int = 10, embedding_aggr: str = "sum",
-          early_stop_patience: int = 2, disable_wandb: bool = False, max_epochs: int = 10):
+          early_stop_patience: int = -1, disable_wandb: bool = False, max_epochs: int = 10):
     pl.seed_everything(seed=seed, workers=True)
+    
+    # save training metadata
+    if not os.path.exists(out):
+        os.makedirs(out)
+
+    with open(os.path.join(out, "meta.json"), "w") as f:
+        json.dump({
+            "encoding": encoding,
+            "model": model,
+            "seed": seed,
+            "batch_size": batch_size,
+            "context": context,
+            "negative_sampling_k": negative_sampling_k,
+            "embedding_dim": embedding_dim,
+            "embedding_aggr": embedding_aggr,
+            "early_stop_patience": early_stop_patience,
+            "max_epochs": max_epochs
+        }, f)
 
     dataset_cls = ENCODING_MAP[encoding]
     model_cls = MODEL_MAP[model]
@@ -41,20 +61,25 @@ def train(choco: str, encoding: str, model: str, out: str, seed: int = 42, batch
                       aggr=embedding_aggr)
 
     callbacks = [
-        pl.callbacks.EarlyStopping(monitor="train/loss",
-                                   min_delta=0.00,
-                                   patience=early_stop_patience),
         pl.callbacks.ModelCheckpoint(save_top_k=1,
                                      monitor="train/loss",
                                      mode="min",
                                      dirpath=out,
-                                     filename="{epoch}",
+                                     filename="model",
                                      every_n_epochs=1)
     ]
 
+    if early_stop_patience != -1:
+        callbacks.append(pl.callbacks.EarlyStopping(
+            monitor="train/loss",
+            min_delta=0.00,
+            patience=early_stop_patience))
+
+
     if not disable_wandb:
-        logger = pl.loggers.WandbLogger(project="pitch2vec",
+        logger = pl.loggers.WandbLogger(project="pitchclass2vec",
                                         group=f"{encoding}_{model}",
+                                        log_model=True,
                                         tags=[
                                             f"{embedding_dim} embedding",
                                             f"{embedding_aggr} aggregation",
@@ -67,7 +92,7 @@ def train(choco: str, encoding: str, model: str, out: str, seed: int = 42, batch
 
     trainer = pl.Trainer(max_epochs=max_epochs,
                          accelerator="auto",
-                         logger=None if disable_wandb else wandb_logger,
+                         logger=None if disable_wandb else logger,
                          devices=1,
                          callbacks=callbacks)
 
