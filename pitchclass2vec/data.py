@@ -2,6 +2,9 @@ from typing import List, Tuple, Dict
 import os
 from collections import Counter
 from itertools import chain, repeat
+import pathlib
+
+import pickle
 
 import numpy as np
 import torch
@@ -10,6 +13,10 @@ import pytorch_lightning as pl
 
 from choco.corpus import ChoCoDocument, ChoCoValidHarteChordsCorpus
 import jams
+
+CACHE_PATH = pathlib.Path(__file__).parent / ".cache"
+if not os.path.exists(CACHE_PATH):
+  os.makedirs(CACHE_PATH)
 
 class ChocoChordDataset(torch.utils.data.Dataset):
   def __init__(self, corpus: List[ChoCoDocument], 
@@ -22,7 +29,16 @@ class ChocoChordDataset(torch.utils.data.Dataset):
         negative_sampling_k (int, optional): Number of negatively sampled examples. Defaults to 20.
     """
     super().__init__()
-    self.corpus = [[ann.symbol for ann in doc.annotations] for doc in corpus]
+    self._cache_file = CACHE_PATH / "corpus.pickle"
+
+    if os.path.exists(self._cache_file):
+      with open(self._cache_file, "rb") as f:
+        self.corpus = pickle.load(f)
+    else:
+      self.corpus = [[ann.symbol for ann in doc.annotations] for doc in corpus]
+      with open(self._cache_file, "wb") as f:
+        pickle.dump(self.corpus, f)
+      
     self.c = context_size
     self.k = negative_sampling_k
 
