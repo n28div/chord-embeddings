@@ -1,6 +1,7 @@
 import argparse
 import os
 import json
+from pathlib import Path
 
 import torch
 import numpy as np
@@ -12,12 +13,15 @@ from pitchclass2vec.data import ChocoDataModule
 import pitchclass2vec.encoding as encoding
 import pitchclass2vec.model as model
 
+from gensim.models import Word2Vec, FastText
+
 
 ENCODING_MAP = {
     "root-interval": encoding.RootIntervalDataset,
     "timed-root-interval": encoding.TimedRootIntervalDataset,
     "all-interval": encoding.AllIntervalDataset,
     "chord2vec": encoding.Chord2vecDataset,
+    "text": encoding.HarteTextDataset,
 }
 
 MODEL_MAP = {
@@ -29,8 +33,8 @@ MODEL_MAP = {
 }
 
 
-def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", **kwargs):
-    pl.seed_everything(seed=args.get("seed", 42), workers=True)
+def train(choco, encoding, model, out, **kwargs):
+    pl.seed_everything(seed=kwargs.get("seed", 42), workers=True)
     
     # save training metadata
     if not os.path.exists(out):
@@ -44,47 +48,72 @@ def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", *
         }, f)
 
     dataset_cls = ENCODING_MAP[encoding]
-    model_cls = MODEL_MAP[model]
-
     data = ChocoDataModule(
         choco,
         dataset_cls,
-        batch_size=kwargs.get(batch_size, 1024),
-        context_size=kwargs.get(context, 5),
-        negative_sampling_k=kwargs.get(negative_sampling_k, 20))
+        batch_size=kwargs.get("batch_size", 1024),
+        context_size=kwargs.get("context", 5),
+        negative_sampling_k=kwargs.get("negative_sampling_k", 20))
+        
+    if encoding == "text":
+        data.prepare_data()
+        data = data.dataset
 
-    model = model_cls(**kwargs)
-
-    callbacks = [
-        pl.callbacks.ModelCheckpoint(save_top_k=1,
-                                     monitor="train/loss",
-                                     mode="min",
-                                     dirpath=out,
-                                     filename="model",
-                                     every_n_epochs=1)
-    ]
-
-    if early_stop_patience != -1:
-        callbacks.append(pl.callbacks.EarlyStopping(
-            monitor="train/loss",
-            min_delta=0.00,
-            patience=early_stop_patience))
-
-
-    if not args.get("disable_wandb", False):
-        logger = pl.loggers.WandbLogger(project="pitchclass2vec",
-                                        group=f"{encoding}_{model}")
-        callbacks.append(pl.callbacks.LearningRateMonitor(logging_interval="step"))
+        if model == "word2vec":
+            model = Word2Vec(sentences=data, 
+                            vector_size=kwargs.get("embedding_dim", 100), 
+                            window=kwargs.get("context", 5),
+                            hs=0,
+                            negative=kwargs.get("negative_sampling_k", 20),
+                            sg=1,
+                            seed=kwargs.get("seed", 42),
+                            epochs=kwargs.get("max_epochs", 42))
+            model.save(str(Path(out) / "model.vw"))
+        elif model == "fasttext":
+            model = FastText(sentences=data, 
+                vector_size=kwargs.get("embedding_dim", 100), 
+                window=kwargs.get("context", 5),
+                negative=kwargs.get("negative_sampling_k", 20),
+                hs=0,
+                sg=1,
+                seed=kwargs.get("seed", 42),
+                epochs=kwargs.get("max_epochs", 42))
+            model.save(str(Path(out) / "model.vw"))
     else:
-        logger = None
+        model_cls = MODEL_MAP[model]
 
-    trainer = pl.Trainer(max_epochs=args.get("max_epochs", 5),
-                         accelerator="auto",
-                         logger=None if args.get("disable_wandb", False) else logger,
-                         devices=1,
-                         callbacks=callbacks)
+        model = model_cls(**kwargs)
 
-    trainer.fit(model, datamodule=data)
+        callbacks = [
+            pl.callbacks.ModelCheckpoint(save_top_k=1,
+                                        monitor="train/loss",
+                                        mode="min",
+                                        dirpath=out,
+                                        filename="model",
+                                        every_n_epochs=1)
+        ]
+
+        if kwargs.get("early_stop_patience", -1) != -1:
+            callbacks.append(pl.callbacks.EarlyStopping(
+                monitor="train/loss",
+                min_delta=0.00,
+                patience=kwargs.get("early_stop_patience", 2)))
+
+
+        if not kwargs.get("disable_wandb", False):
+            logger = pl.loggers.WandbLogger(project="pitchclass2vec",
+                                            group=f"{encoding}_{model}")
+            callbacks.append(pl.callbacks.LearningRateMonitor(logging_interval="step"))
+        else:
+            logger = None
+
+        trainer = pl.Trainer(max_epochs=kwargs.get("max_epochs", 5),
+                            accelerator="auto",
+                            logger=None if kwargs.get("disable_wandb", False) else logger,
+                            devices=1,
+                            callbacks=callbacks)
+
+        trainer.fit(model, datamodule=data)
 
 
 if __name__ == "__main__":
@@ -99,23 +128,11 @@ if __name__ == "__main__":
                         choices=list(MODEL_MAP.keys()), 
                         required=True, 
                         default="fasttext")
-    parser.add_argument("--seed", type=int, required=False, default=42)
-    parser.add_argument("--max-epochs", type=int, required=False, default=5)
-    parser.add_argument("--batch-size", type=int, required=False, default=512)
-    parser.add_argument("--embedding-dim", type=int, required=False, default=10)
-    parser.add_argument("--embedding-aggr",
-                        choices=["sum", "mean"], required=False, default="sum")
-    parser.add_argument("--context", type=int, required=False, default=5)
-    parser.add_argument("--negative-sampling-k", type=int,
-                        required=False, default=20)
-    parser.add_argument("--early-stop-patience", type=int,
-                        required=False, default=-1)
-    parser.add_argument("--disable-wandb", action='store_const',
-                        const=True, default=False)
+    
+    args, unknown = parser.parse_known_args()
+    unknown = {
+        key.replace("--", "").replace("-", "_"): int(val) if val.isdigit() else val
+        for key, val in zip(unknown[::2], unknown[1::2])
+    }
 
-    args = parser.parse_args()
-    train(args.choco, args.encoding, args.model, args.out, seed=args.seed, 
-          batch_size=args.batch_size, context=args.context, 
-          negative_sampling_k=args.negative_sampling_k, embedding_dim=args.embedding_dim, 
-          embedding_aggr=args.embedding_aggr, early_stop_patience=args.early_stop_patience, 
-          disable_wandb=args.disable_wandb, max_epochs=args.max_epochs)
+    train(args.choco, args.encoding, args.model, args.out, **unknown)

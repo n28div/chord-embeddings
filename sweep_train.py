@@ -23,15 +23,14 @@ def run_training(config=None):
         config["out"] = os.path.join(BASE_EXPERIMENTS, f"experiment_{len(experiments)}/")
         experiments.append(dict(config).values())
         
-        train(choco=config["choco"],
-              encoding=config["encoding"],
-              model=config["model"],
-              out=config["out"],
-              **config)
-        metrics = evaluate(encoding=config["encoding"],
-                           model=config["model"],
-                           path=os.path.join(config["out"], "model.ckpt"),
-                           config=config["evaluation"])
+        choco = config.pop("choco")
+        encoding = config.pop("encoding")
+        model = config.pop("model")
+        out = config.pop("out")
+
+        train(choco, encoding, model, out, **config)
+        evaluation = config.pop("evaluation")
+        metrics = evaluate(encoding, model, os.path.join(out, "model.ckpt"), evaluation)
         wandb.log({"odd_one_out_acc": metrics["odd_one_out"][0]})
 
 

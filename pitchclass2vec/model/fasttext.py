@@ -8,7 +8,7 @@ from sklearn.utils.class_weight import compute_sample_weight
 from pitchclass2vec.model.base import BaseModel
 
 class FasttextModel(BaseModel):
-  def __init__(self, embedding_dim: int = 10, aggr: str = "sum"):
+  def __init__(self, embedding_dim: int = 10, aggr: str = "sum", **kwargs):
     """
       Args:
         embedding_dim (int, optional): Embedding dimension. Defaults to 10.
@@ -122,7 +122,8 @@ class RNNWeightedFasttextModel(ScaledLossFasttextModel):
       Args:
         embedding_dim (int, optional): Embedding dimension. Defaults to 10.
     """
-    kwargs.pop("aggr")
+    if "aggr" in kwargs:
+      kwargs.pop("aggr")
     super().__init__(embedding_dim, aggr="sum", **kwargs)
     self.save_hyperparameters()
     

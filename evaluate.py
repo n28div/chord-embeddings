@@ -12,11 +12,20 @@ import pitchclass2vec.model as model
 from pitchclass2vec.pitchclass2vec import Pitchclass2VecModel
 from gensim_evaluations.methods import odd_one_out
 from train import MODEL_MAP, ENCODING_MAP
+from gensim.models import KeyedVectors
 
 def evaluate(encoding: str, model: str, path: str, config: str):
-    model = Pitchclass2VecModel(ENCODING_MAP[encoding], 
-                                MODEL_MAP[model],
-                                path)
+    if encoding == "text":
+        model = KeyedVectors.load(path).wv
+
+        # FIXME: Workaround to use FastText from gensim with the current odd_one_out
+        # implementation
+        if "FastText" in str(model):
+            model.has_index_for = lambda _: True
+    else:
+        model = Pitchclass2VecModel(ENCODING_MAP[encoding], 
+                                    MODEL_MAP[model],
+                                    path)
 
     with open(config) as f:
         config = json.load(f)
@@ -25,6 +34,7 @@ def evaluate(encoding: str, model: str, path: str, config: str):
     metrics["odd_one_out"] = odd_one_out(
         { k: v for k, v in config.items() if k != "vocab" },
         model, 
+        allow_oov=True,
         vocab=config["vocab"],
         k_in=4
     )
