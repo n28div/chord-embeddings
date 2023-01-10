@@ -146,7 +146,7 @@ class ChocoDataModule(pl.LightningDataModule):
     self.negative_sampling_k = negative_sampling_k
 
   def prepare_data(self):
-    self.dataset = self.dataset_cls(list(self.corpus), 
+    self.dataset = self.dataset_cls(self.corpus, 
                                     context_size=self.context_size, 
                                     negative_sampling_k=self.negative_sampling_k)
 
