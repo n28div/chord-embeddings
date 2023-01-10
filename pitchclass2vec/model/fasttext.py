@@ -61,3 +61,22 @@ class FasttextModel(BaseModel):
     loss = nn.functional.binary_cross_entropy_with_logits(pred, y.float(), torch.tensor(weight).to(pred.device))
     self.log("train/loss", loss.item())
     return loss
+
+
+class WeightedLossFasttextModel(FasttextModel):
+  def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.nn.BCEWithLogitsLoss:
+    """
+    Perform a training step on the provided batch.
+
+    Args:
+        batch (torch.Tensor): The provided batch.
+        batch_idx (int): The index of the provided batch.
+
+    Returns:
+        torch.nn.BCEWithLogitsLoss: Loss on the provided batch.
+    """
+    source, target, y, duration = batch
+    pred = self._predict(source, target)
+    loss = nn.functional.binary_cross_entropy_with_logits(pred, y.float(), duration)
+    self.log("train/loss", loss.item())
+    return loss

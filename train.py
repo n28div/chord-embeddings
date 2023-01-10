@@ -15,13 +15,15 @@ import pitchclass2vec.model as model
 
 ENCODING_MAP = {
     "root-interval": encoding.RootIntervalDataset,
+    "timed-root-interval": encoding.TimedRootIntervalDataset,
     "all-interval": encoding.AllIntervalDataset,
-    "chord2vec": encoding.Chord2vecDataset
+    "chord2vec": encoding.Chord2vecDataset,
 }
 
 MODEL_MAP = {
     "word2vec": model.Word2vecModel,
-    "fasttext": model.FasttextModel
+    "fasttext": model.FasttextModel,
+    "weighted-loss-fasttext": model.WeightedLossFasttextModel
 }
 
 
@@ -80,7 +82,6 @@ def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", s
     if not disable_wandb:
         logger = pl.loggers.WandbLogger(project="pitchclass2vec",
                                         group=f"{encoding}_{model}",
-                                        #log_model=True,
                                         tags=[
                                             f"{embedding_dim} embedding",
                                             f"{embedding_aggr} aggregation",
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     parser.add_argument("--negative-sampling-k", type=int,
                         required=False, default=20)
     parser.add_argument("--early-stop-patience", type=int,
-                        required=False, default=2)
+                        required=False, default=-1)
     parser.add_argument("--disable-wandb", action='store_const',
                         const=True, default=False)
 

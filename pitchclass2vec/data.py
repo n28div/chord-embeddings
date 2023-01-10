@@ -18,7 +18,7 @@ CACHE_PATH = pathlib.Path(__file__).parent / ".cache"
 if not os.path.exists(CACHE_PATH):
   os.makedirs(CACHE_PATH)
 
-class ChocoChordDataset(torch.utils.data.Dataset):
+class ChocoDocumentDataset(torch.utils.data.Dataset):
   def __init__(self, corpus: List[ChoCoDocument], 
                context_size: int = 3,
                negative_sampling_k: int = 20):
@@ -35,7 +35,7 @@ class ChocoChordDataset(torch.utils.data.Dataset):
       with open(self._cache_file, "rb") as f:
         self.corpus = pickle.load(f)
     else:
-      self.corpus = [[ann.symbol for ann in doc.annotations] for doc in tqdm(corpus)]
+      self.corpus = list(corpus)
       with open(self._cache_file, "wb") as f:
         pickle.dump(self.corpus, f)
       
@@ -49,7 +49,8 @@ class ChocoChordDataset(torch.utils.data.Dataset):
     # comes from.
     self._doc_buckets = np.cumsum([0] + [len(doc) for doc in self.corpus])
 
-    self.vocab = np.array(sorted(set(chain(*self.corpus))))
+    self.vocab = np.array(sorted(set((ann.symbol for doc in self.corpus for ann in doc.annotations))))
+
 
   def __len__(self) -> int:
     """
@@ -58,19 +59,22 @@ class ChocoChordDataset(torch.utils.data.Dataset):
     """
     return sum(len(doc) for doc in self.corpus)
 
-  def __getitem__(self, idx: int) -> Tuple[Tuple[str], Tuple[str], Tuple[str]]:
+  def __getitem__(self, idx: int) -> Tuple[List[int], List[int], List[int], List[float]]:
     """
     Retrieve an item from the dataset and perform negative sampling on it.
+    Duration for negative samples is randomly sampled from a normal distribution
+    whose meand and standard deviation are taken from the document duration
+    distribution.
 
     Args:
         idx (int): The item index.
 
     Returns:
-        Tuple[Tuple[str], Tuple[str], Tuple[str]]: The current item, positive examples and negative examples.
+        Tuple[List[int], List[int], List[int], List[float]]: The current item, positive examples, negative examples and durations.
     """
     # retrieve the document index by finding the bucket in which the current index falls in
     bucket_idx = np.searchsorted(self._doc_buckets, idx, "right")
-    doc = np.array(self.corpus[bucket_idx - 1])
+    doc = np.array(self.corpus[bucket_idx - 1].annotations)
     doc_len = len(doc)
     # retrieve the by computing the relative position to the found bucket
     elem_idx = idx - self._doc_buckets[bucket_idx - 1]
@@ -94,15 +98,20 @@ class ChocoChordDataset(torch.utils.data.Dataset):
     
     # compute target as the set of encoded positives and negatives
     # and compute the label y as 1 for positives and 0 for negatives
-    target = [ self.encode_chord(c) for c in doc[positive_idxs] ]
+    target = [ self.encode_chord(c) for c in doc[positive_idxs, 0] ]
     target += [ self.encode_chord(c) for c in self.vocab[negative_idxs] ]
+    
+    doc_durations = doc[:, 1].astype(float)
+    duration = doc_durations[positive_idxs].tolist()
+    duration += np.random.normal(doc_durations.mean(), doc_durations.std(), self.k).tolist()
+    
     y = list(repeat(1, len(positive_idxs))) + list(repeat(0, len(negative_idxs)))
 
     # compute source as the repetition of the current chord over all the
     # targets
-    source = list(repeat(self.encode_chord(doc[elem_idx]), len(target)))
+    source = list(repeat(self.encode_chord(doc[elem_idx, 0]), len(target)))
     
-    return source, target, y
+    return source, target, y, duration
 
   @staticmethod
   def encode_chord(chord: str) -> np.array:
@@ -118,18 +127,64 @@ class ChocoChordDataset(torch.utils.data.Dataset):
     raise NotImplementedError()
 
   @staticmethod
-  def collate_fn(sample: List[Tuple[np.array, np.array, np.array]]) -> Tuple[np.array, np.array, np.array]:
+  def collate_fn(sample: Tuple[List[np.array], List[np.array], np.array, np.array]) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
     """
-    Collate a list of samples (source, target, label) in an homogeneous batch.
-    Needs to be overridden.
+    Collate the provided samples in a single batch.
 
     Args:
-        sample (List[Tuple[np.array, np.array, np.array]]): Input sample in the form [source, target, y]
+        sample (List[List[np.array], List[np.array], np.array]): Input sample
 
     Returns:
-        Tuple[np.array, np.array, np.array]: source, target and y batched.
+        Tuple[Tuple[np.array, np.array], Tuple[np.array, np.array], np.array, np.array]: Output batch.
     """
-    raise NotImplementedError
+    source, target, y, duration = zip(*sample)
+    
+    source = torch.nn.utils.rnn.pad_sequence(map(torch.tensor, chain(*source)), 
+                                             batch_first=True, 
+                                             padding_value=0).int()
+    
+    target = torch.nn.utils.rnn.pad_sequence(map(torch.tensor, chain(*target)), 
+                                             batch_first=True, 
+                                             padding_value=0).int()
+    
+    y = torch.tensor(list(chain(*y)))
+
+    duration = torch.tensor(list(chain(*y)))
+
+    return source, target, y, duration
+
+
+class ChocoChordDataset(ChocoDocumentDataset):
+  def __getitem__(self, idx: int) -> Tuple[List[int], List[int], List[int]]:
+    """
+    Same as ChocoDocumentDataset but durations are discarded.
+
+    Args:
+        idx (int): The item index.
+
+    Returns:
+        Tuple[List[int], List[int], List[int], List[float]]: The current item, positive examples, negative examples.
+    """
+    return super().__getitem__(idx)[:-1]
+
+  @staticmethod
+  def collate_fn(sample: Tuple[List[np.array], List[np.array], np.array]) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
+    """
+    Collate the provided samples in a single batch.
+
+    Args:
+        sample (List[List[np.array], List[np.array], np.array]): Input sample
+
+    Returns:
+        Tuple[Tuple[np.array, np.array], Tuple[np.array, np.array], np.array]: Output batch.
+    """
+    source, target, y = zip(*sample)
+    
+    source = torch.tensor((list(chain(*source))))
+    target = torch.tensor((list(chain(*target))))
+    y = torch.tensor(list(chain(*y)))
+
+    return source, target, y
 
 
 class ChocoDataModule(pl.LightningDataModule):

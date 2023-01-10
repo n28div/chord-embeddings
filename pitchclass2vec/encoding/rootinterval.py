@@ -7,11 +7,11 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
-from pitchclass2vec.data import ChocoChordDataset
+from pitchclass2vec.data import ChocoDocumentDataset, ChocoChordDataset
 from pitchclass2vec.encoding.utils import pitchclass_to_onehot, chord_pitchclass
 from harte.harte import Harte
 
-class RootIntervalDataset(ChocoChordDataset):
+class RootIntervalMixin(object):
   @staticmethod
   @cache
   def encode_chord(chord: str) -> List[int]:
@@ -37,6 +37,36 @@ class RootIntervalDataset(ChocoChordDataset):
     encoding = list(map(lambda x: x.dot(2**np.arange(12)[::-1]).astype(int), onehot))
     return encoding
 
+
+class TimedRootIntervalDataset(RootIntervalMixin, ChocoDocumentDataset):
+  @staticmethod
+  def collate_fn(sample: Tuple[List[np.array], List[np.array], np.array]) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
+    """
+    Collate the provided samples in a single batch.
+
+    Args:
+        sample (List[List[np.array], List[np.array], np.array]): Input sample
+
+    Returns:
+        Tuple[Tuple[np.array, np.array], Tuple[np.array, np.array], np.array]: Output batch.
+    """
+    source, target, y, duration = zip(*sample)
+    
+    source = torch.nn.utils.rnn.pad_sequence(map(torch.tensor, chain(*source)), 
+                                             batch_first=True, 
+                                             padding_value=0).int()
+    
+    target = torch.nn.utils.rnn.pad_sequence(map(torch.tensor, chain(*target)), 
+                                             batch_first=True, 
+                                             padding_value=0).int()
+   
+    duration = torch.tensor(list(chain(*duration)))
+    y = torch.tensor(list(chain(*y)))
+
+    return source, target, y, duration
+
+
+class RootIntervalDataset(RootIntervalMixin, ChocoChordDataset):
   @staticmethod
   def collate_fn(sample: Tuple[List[np.array], List[np.array], np.array]) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
     """

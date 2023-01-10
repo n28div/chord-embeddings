@@ -11,18 +11,7 @@ import pitchclass2vec.encoding as encoding
 import pitchclass2vec.model as model
 from pitchclass2vec.pitchclass2vec import Pitchclass2VecModel
 from gensim_evaluations.methods import odd_one_out
-
-
-ENCODING_MAP = {
-    "root-interval": encoding.RootIntervalDataset,
-    "all-interval": encoding.AllIntervalDataset,
-    "chord2vec": encoding.Chord2vecDataset
-}
-
-MODEL_MAP = {
-    "word2vec": model.Word2vecModel,
-    "fasttext": model.FasttextModel
-}
+from train import MODEL_MAP, ENCODING_MAP
 
 def evaluate(encoding: str, model: str, path: str, config: str):
     model = Pitchclass2VecModel(ENCODING_MAP[encoding], 

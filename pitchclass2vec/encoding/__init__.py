@@ -1,3 +1,3 @@
 from pitchclass2vec.encoding.allinterval import AllIntervalDataset
-from pitchclass2vec.encoding.rootinterval import RootIntervalDataset
+from pitchclass2vec.encoding.rootinterval import RootIntervalDataset, TimedRootIntervalDataset
 from pitchclass2vec.encoding.chord2vec import Chord2vecDataset
