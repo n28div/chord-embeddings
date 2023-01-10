@@ -59,5 +59,5 @@ class FasttextModel(BaseModel):
     pred = self._predict(source, target)
     weight = compute_sample_weight("balanced", y.cpu())
     loss = nn.functional.binary_cross_entropy_with_logits(pred, y.float(), torch.tensor(weight).to(pred.device))
-    self.log("train/loss", loss)
+    self.log("train/loss", loss.item())
     return loss
