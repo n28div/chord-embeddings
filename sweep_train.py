@@ -50,6 +50,7 @@ if __name__ == "__main__":
     config["parameters"]["config"]["value"] = args.config
     config["parameters"]["evaluation"]["value"] = args.evaluation
 
+    wandb.finish()
     sweep_id = wandb.sweep(config, project=args.wandb)
     wandb.agent(sweep_id, function=run_training)
     

@@ -78,7 +78,6 @@ def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", s
 
 
     if not disable_wandb:
-        wandb.finish()
         logger = pl.loggers.WandbLogger(project="pitchclass2vec",
                                         group=f"{encoding}_{model}",
                                         log_model=True,
