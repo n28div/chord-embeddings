@@ -5,6 +5,7 @@ import json
 import torch
 import numpy as np
 import pytorch_lightning as pl
+import wandb
 
 from choco.corpus import ChoCoHarteAnnotationsCorpus
 from pitchclass2vec.data import ChocoDataModule
@@ -77,6 +78,7 @@ def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", s
 
 
     if not disable_wandb:
+        wandb.finish()
         logger = pl.loggers.WandbLogger(project="pitchclass2vec",
                                         group=f"{encoding}_{model}",
                                         log_model=True,
