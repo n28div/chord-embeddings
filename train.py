@@ -23,7 +23,7 @@ ENCODING_MAP = {
 MODEL_MAP = {
     "word2vec": model.Word2vecModel,
     "fasttext": model.FasttextModel,
-    "weighted-loss-fasttext": model.WeightedLossFasttextModel
+    "scaled-loss-fasttext": model.ScaledLossFasttextModel
 }
 
 

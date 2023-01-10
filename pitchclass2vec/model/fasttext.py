@@ -63,7 +63,7 @@ class FasttextModel(BaseModel):
     return loss
 
 
-class WeightedLossFasttextModel(FasttextModel):
+class ScaledLossFasttextModel(FasttextModel):
   def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.nn.BCEWithLogitsLoss:
     """
     Perform a training step on the provided batch.
