@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from itertools import chain
+from functools import cache
 
 import numpy as np
 import torch
@@ -12,6 +13,7 @@ from harte.harte import Harte
 
 class Chord2vecDataset(ChocoChordDataset):
   @staticmethod
+  @cache
   def encode_chord(chord: str) -> List[int]:
     """
     Encode a chord as proposed by chord2vec[1].
