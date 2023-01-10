@@ -80,3 +80,74 @@ class ScaledLossFasttextModel(FasttextModel):
     loss = nn.functional.binary_cross_entropy_with_logits(pred, y.float(), duration)
     self.log("train/loss", loss.item())
     return loss
+
+
+class EmbeddingWeightedFasttextModel(ScaledLossFasttextModel):
+  def __init__(self, embedding_dim: int = 10, **kwargs):
+    """
+      Args:
+        embedding_dim (int, optional): Embedding dimension. Defaults to 10.
+    """
+    kwargs.pop("aggr")
+    super().__init__(embedding_dim, aggr="sum", **kwargs)
+    self.save_hyperparameters()
+    
+    # declare an additional embedding module to learn the weight of each interval
+    self.weights_embedding = nn.Embedding(self.full_vocab_size, 1)
+
+  def _predict(self, source: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """
+    Perform a prediction step using the same method as traditional fasttext.
+    Intervals are weighted through a learned parameter.
+
+    Args:
+        source (torch.Tensor): Source chords
+        target (torch.Tensor): Target chords
+
+    Returns:
+        torch.Tensor: Tensor of similarities between chord computes as dot products
+    """
+    source_weight = self.weights_embedding(source).squeeze(-1)
+    source = self.embedding(source, per_sample_weights=source_weight)
+    
+    target_weight = self.weights_embedding(target).squeeze(-1)
+    target = self.embedding(target, per_sample_weights=target_weight)
+    y = torch.einsum("ij,ik->i", source, target)
+    return y
+
+
+class RNNWeightedFasttextModel(ScaledLossFasttextModel):
+  def __init__(self, embedding_dim: int = 10, hidden_size: int = 10, **kwargs):
+    """
+      Args:
+        embedding_dim (int, optional): Embedding dimension. Defaults to 10.
+    """
+    kwargs.pop("aggr")
+    super().__init__(embedding_dim, aggr="sum", **kwargs)
+    self.save_hyperparameters()
+    
+    # declare an additional embedding module to learn the weight of each interval
+    self.lstm = nn.LSTM(1, hidden_size, bidirectional=True, batch_first=True)
+    self.weight_linear = nn.Linear(hidden_size * 2, 1)
+
+  def _predict(self, source: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """
+    Perform a prediction step using the same method as traditional fasttext.
+    Intervals are weighted through an RNN learned parameter.
+
+    Args:
+        source (torch.Tensor): Source chords
+        target (torch.Tensor): Target chords
+
+    Returns:
+        torch.Tensor: Tensor of similarities between chord computes as dot products
+    """
+    source_weight, _ = self.lstm(source.float().unsqueeze(-1))
+    source_weight = self.weight_linear(source_weight).squeeze(-1)
+    source = self.embedding(source, per_sample_weights=source_weight)
+    
+    target_weight, _ = self.lstm(target.float().unsqueeze(-1))
+    target_weight = self.weight_linear(target_weight).squeeze(-1)
+    target = self.embedding(target, per_sample_weights=target_weight)
+    y = torch.einsum("ij,ik->i", source, target)
+    return y

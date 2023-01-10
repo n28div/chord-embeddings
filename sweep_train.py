@@ -27,12 +27,7 @@ def run_training(config=None):
               encoding=config["encoding"],
               model=config["model"],
               out=config["out"],
-              batch_size=config["batch_size"],
-              context=config["context"],
-              negative_sampling_k=config["negative_sampling_k"],
-              embedding_dim=config["embedding_dim"],
-              embedding_aggr=config["embedding_aggr"],
-              max_epochs=config["max_epochs"])
+              **config)
         metrics = evaluate(encoding=config["encoding"],
                            model=config["model"],
                            path=os.path.join(config["out"], "model.ckpt"),

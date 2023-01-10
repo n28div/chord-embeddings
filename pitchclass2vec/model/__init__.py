@@ -1,2 +1,2 @@
-from pitchclass2vec.model.fasttext import FasttextModel, ScaledLossFasttextModel
+from pitchclass2vec.model.fasttext import FasttextModel, ScaledLossFasttextModel, EmbeddingWeightedFasttextModel, RNNWeightedFasttextModel
 from pitchclass2vec.model.word2vec import Word2vecModel

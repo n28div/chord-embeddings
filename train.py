@@ -23,14 +23,14 @@ ENCODING_MAP = {
 MODEL_MAP = {
     "word2vec": model.Word2vecModel,
     "fasttext": model.FasttextModel,
-    "scaled-loss-fasttext": model.ScaledLossFasttextModel
+    "scaled-loss-fasttext": model.ScaledLossFasttextModel,
+    "emb-weighted-fasttext": model.EmbeddingWeightedFasttextModel,
+    "rnn-weighted-fasttext": model.RNNWeightedFasttextModel,
 }
 
 
-def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", seed: int = 42, batch_size: int = 32, context: int = 5,
-          negative_sampling_k: int = 20, embedding_dim: int = 10, embedding_aggr: str = "sum",
-          early_stop_patience: int = -1, disable_wandb: bool = False, max_epochs: int = 10):
-    pl.seed_everything(seed=seed, workers=True)
+def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", **kwargs):
+    pl.seed_everything(seed=args.get("seed", 42), workers=True)
     
     # save training metadata
     if not os.path.exists(out):
@@ -40,14 +40,7 @@ def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", s
         json.dump({
             "encoding": encoding,
             "model": model,
-            "seed": seed,
-            "batch_size": batch_size,
-            "context": context,
-            "negative_sampling_k": negative_sampling_k,
-            "embedding_dim": embedding_dim,
-            "embedding_aggr": embedding_aggr,
-            "early_stop_patience": early_stop_patience,
-            "max_epochs": max_epochs
+            **kwargs
         }, f)
 
     dataset_cls = ENCODING_MAP[encoding]
@@ -56,12 +49,11 @@ def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", s
     data = ChocoDataModule(
         choco,
         dataset_cls,
-        batch_size=batch_size,
-        context_size=context,
-        negative_sampling_k=negative_sampling_k)
+        batch_size=kwargs.get(batch_size, 1024),
+        context_size=kwargs.get(context, 5),
+        negative_sampling_k=kwargs.get(negative_sampling_k, 20))
 
-    model = model_cls(embedding_dim=embedding_dim,
-                      aggr=embedding_aggr)
+    model = model_cls(**kwargs)
 
     callbacks = [
         pl.callbacks.ModelCheckpoint(save_top_k=1,
@@ -79,22 +71,16 @@ def train(choco: str = "", encoding: str = "", model: str = "", out: str = "", s
             patience=early_stop_patience))
 
 
-    if not disable_wandb:
+    if not args.get("disable_wandb", False):
         logger = pl.loggers.WandbLogger(project="pitchclass2vec",
-                                        group=f"{encoding}_{model}",
-                                        tags=[
-                                            f"{embedding_dim} embedding",
-                                            f"{embedding_aggr} aggregation",
-                                            f"{context} context",
-                                            f"{negative_sampling_k} negative sampling k"
-                                        ])
+                                        group=f"{encoding}_{model}")
         callbacks.append(pl.callbacks.LearningRateMonitor(logging_interval="step"))
     else:
         logger = None
 
-    trainer = pl.Trainer(max_epochs=max_epochs,
+    trainer = pl.Trainer(max_epochs=args.get("max_epochs", 5),
                          accelerator="auto",
-                         logger=None if disable_wandb else logger,
+                         logger=None if args.get("disable_wandb", False) else logger,
                          devices=1,
                          callbacks=callbacks)
 
