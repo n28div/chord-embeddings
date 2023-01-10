@@ -7,7 +7,7 @@ import torch.nn as nn
 import pytorch_lightning as pl
 
 from pitchclass2vec.encoding.rootinterval import RootIntervalDataset
-from pitchclass2vec.encoding.utils import pitchclass_to_onehot
+from pitchclass2vec.encoding.utils import pitchclass_to_onehot, chord_pitchclass
 from harte.harte import Harte
 
 class AllIntervalDataset(RootIntervalDataset):
@@ -24,7 +24,7 @@ class AllIntervalDataset(RootIntervalDataset):
     Returns:
         List[np.array]: List of encoded components of the chord.
     """
-    pc = Harte(chord).pitchClasses
+    pc = chord_pitchclass(chord)
 
     if len(pc) != 0:
       intervals = list(combinations(pc, 2))
