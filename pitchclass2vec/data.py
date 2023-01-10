@@ -35,7 +35,7 @@ class ChocoDocumentDataset(torch.utils.data.Dataset):
       with open(self._cache_file, "rb") as f:
         self.corpus = pickle.load(f)
     else:
-      self.corpus = list(corpus)
+      self.corpus = list(tqdm(corpus))
       with open(self._cache_file, "wb") as f:
         pickle.dump(self.corpus, f)
       
