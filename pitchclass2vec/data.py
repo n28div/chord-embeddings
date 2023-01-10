@@ -3,13 +3,13 @@ import os
 from collections import Counter
 from itertools import chain, repeat
 import pathlib
-
 import pickle
 
 import numpy as np
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
+from tqdm import tqdm
 
 from choco.corpus import ChoCoDocument, ChoCoValidHarteChordsCorpus
 import jams
@@ -35,7 +35,7 @@ class ChocoChordDataset(torch.utils.data.Dataset):
       with open(self._cache_file, "rb") as f:
         self.corpus = pickle.load(f)
     else:
-      self.corpus = [[ann.symbol for ann in doc.annotations] for doc in corpus]
+      self.corpus = [[ann.symbol for ann in doc.annotations] for doc in tqdm(corpus)]
       with open(self._cache_file, "wb") as f:
         pickle.dump(self.corpus, f)
       
