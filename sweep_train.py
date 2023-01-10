@@ -19,9 +19,9 @@ BASE_EXPERIMENTS = None
 
 def run_training(config=None):
     with wandb.init(config=config):
-        config = wandb.config
+        config = dict(wandb.config)
         config["out"] = os.path.join(BASE_EXPERIMENTS, f"experiment_{len(experiments)}/")
-        experiments.append(dict(config).values())
+        experiments.append(config.values())
         
         choco = config.pop("choco")
         encoding = config.pop("encoding")

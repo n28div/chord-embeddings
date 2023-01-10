@@ -68,7 +68,7 @@ def train(choco, encoding, model, out, **kwargs):
                             sg=1,
                             seed=kwargs.get("seed", 42),
                             epochs=kwargs.get("max_epochs", 42))
-            model.save(str(Path(out) / "model.vw"))
+            model.save(str(Path(out) / "model.ckpt"))
         elif model == "fasttext":
             model = FastText(sentences=data, 
                 vector_size=kwargs.get("embedding_dim", 100), 
@@ -78,7 +78,7 @@ def train(choco, encoding, model, out, **kwargs):
                 sg=1,
                 seed=kwargs.get("seed", 42),
                 epochs=kwargs.get("max_epochs", 42))
-            model.save(str(Path(out) / "model.vw"))
+            model.save(str(Path(out) / "model.ckpt"))
     else:
         model_cls = MODEL_MAP[model]
 
