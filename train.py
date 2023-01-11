@@ -158,7 +158,7 @@ if __name__ == "__main__":
     
     args, unknown = parser.parse_known_args()
     unknown = {
-        key.replace("--", "").replace("-", "_"): int(val) if val.isdigit() else val
+        key.replace("--", "").replace("-", "_"): int(val) if val.replace("-", "").isdigit() else val
         for key, val in zip(unknown[::2], unknown[1::2])
     }
 
