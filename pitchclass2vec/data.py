@@ -213,5 +213,5 @@ class ChocoDataModule(pl.LightningDataModule):
       shuffle=True,
       collate_fn=self.dataset_cls.collate_fn,
       persistent_workers=True,
-      prefetch_factor=4
+      prefetch_factor=20
     )
