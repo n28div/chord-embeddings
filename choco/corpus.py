@@ -100,6 +100,7 @@ class ChoCoValidHarteChordsCorpus(ChoCoCorpus):
     annotation = jam.search(namespace=chord_namespace)
     observations = annotation[0].data
     chords = [HarteAnnotation(obs.value, obs.duration) for obs in observations]
+    assert len(chords) > 10
     [Harte(c.symbol) for c in chords]
     return ChoCoDocument(chords, source=path, jams=jam)
 
