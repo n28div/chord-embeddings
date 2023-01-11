@@ -6,10 +6,12 @@ import numpy as np
 from pitchclass2vec.encoding.rdf import RDFChordsDataset
 from pyrdf2vec import RDF2VecTransformer
 from pyrdf2vec.embedders import Word2Vec
-from pyrdf2vec.walkers import RandomWalker
+from pyrdf2vec.walkers import RandomWalker, WLWalker, HALKWalker
 
 
-class RandomWalkRdf2VecModel(object):
+class BaseRdf2VecModel(object):
+  WALKER = None
+
   def __init__(self, max_depth: int, max_walks: None, max_epochs: int = 1, **kwargs):
     """
     Initialize a random walk based rdf2vec.
@@ -21,7 +23,7 @@ class RandomWalkRdf2VecModel(object):
     """
     self.transformer = RDF2VecTransformer(
       Word2Vec(epochs=max_epochs),
-      walkers=[RandomWalker(max_depth, max_walks, with_reverse=True, n_jobs=os.cpu_count())],
+      walkers=[self.WALKER(max_depth, None if max_walks < 0 else max_walks, with_reverse=True, n_jobs=os.cpu_count())],
       verbose=1
     )
     self.embeddings = None
@@ -78,3 +80,15 @@ class RandomWalkRdf2VecModel(object):
     with open(path, "rb") as f:
       obj = pickle.load(f)
     return obj
+
+
+class RandomWalkRdf2VecModel(BaseRdf2VecModel):
+  WALKER = RandomWalker
+
+
+class WLWalkRdf2VecModel(BaseRdf2VecModel):
+  WALKER = WLWalker
+
+
+class HALKWalkRdf2VecModel(BaseRdf2VecModel):
+  WALKER = HALKWalker

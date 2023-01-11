@@ -31,7 +31,9 @@ MODEL_MAP = {
     "scaled-loss-fasttext": model.ScaledLossFasttextModel,
     "emb-weighted-fasttext": model.EmbeddingWeightedFasttextModel,
     "rnn-weighted-fasttext": model.RNNWeightedFasttextModel,
-    "randomwalk-rdf2vec": model.RandomWalkRdf2VecModel
+    "randomwalk-rdf2vec": model.RandomWalkRdf2VecModel,
+    "wlwalk-rdf2vec": model.WLWalkRdf2VecModel,
+    "halkwalk-rdf2vec": model.HALKWalkRdf2VecModel,
 }
 
 
