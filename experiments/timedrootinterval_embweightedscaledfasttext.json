@@ -28,9 +28,6 @@
     "embedding_dim": {
       "value": 150
     },
-    "embedding_aggr": {
-      "value": "sum"
-    },
     "max_epochs": {
       "values": [1, 5]
     }

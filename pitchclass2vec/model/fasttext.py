@@ -88,7 +88,8 @@ class EmbeddingWeightedFasttextModel(ScaledLossFasttextModel):
       Args:
         embedding_dim (int, optional): Embedding dimension. Defaults to 10.
     """
-    kwargs.pop("aggr")
+    if "aggr" in kwargs:
+      kwargs.pop("aggr")
     super().__init__(embedding_dim, aggr="sum", **kwargs)
     self.save_hyperparameters()
     
