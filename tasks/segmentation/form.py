@@ -2,14 +2,19 @@ from typing import List
 from suffix_tree import Tree
 import numpy as np
 
-#def subtrees(node, sequence = []):
-#  if len(node.children) > 0:
-#    for char, child in node.children.items():
-#      return subtrees(child, sequence + [char])
-#  else:
-#    return list(node.path.seq)
+def FORM(seq: List[str]) -> np.array:
+  """
+  Implement the FORM[1] algorithm to perform structure segmentation
+  using symbolic representation of chords.
 
-def FORM(seq: List[str]):
+  Args:
+      seq (List[str]): Sequence of chords
+
+  Returns:
+      np.array: 
+        Segmentation of the piece where each chord as been labeled 
+        with the corresponding section.
+  """
   # Note: Chord simplification measure is relaxed
   tree = Tree({ "": seq })
   tree.root.compute_left_diverse()
