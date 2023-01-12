@@ -17,7 +17,8 @@ class LSTMBaselineModel(pl.LightningModule):
                hidden_size: int = 100, 
                dropout: float = 0.0,
                num_layers: int = 1, 
-               num_labels: int = 11):
+               num_labels: int = 11,
+               learning_rate: float = 0.001):
     """
     Model for the functional segmentation of a music piece.
 
@@ -27,9 +28,11 @@ class LSTMBaselineModel(pl.LightningModule):
         dropout (float, optional): LSTM dropout. Defaults to 0.0.
         num_layers (int, optional): Number of stacked layers in the LSTM. Defaults to 1.
         num_labels (int, optional): Number of sections to be predicted. Defaults to 11.
+        learning_rate (float, optional): Default learning rate. Defaults to 0.001.
     """
     super().__init__()
     self.save_hyperparameters()
+    self.learning_rate = learning_rate
     self.lstm = nn.LSTM(embedding_dim,
                         hidden_size,
                         dropout=dropout,
@@ -152,12 +155,8 @@ class LSTMBaselineModel(pl.LightningModule):
     Returns:
         Dict: Optimizer configuration
     """
-    optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5)
     return {
-        "optimizer": optimizer,
-        "lr_scheduler": {
-            "scheduler": scheduler,
-            "monitor": "train_loss"
-        }
+        "optimizer": optimizer
     }

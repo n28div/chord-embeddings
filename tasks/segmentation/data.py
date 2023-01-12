@@ -193,10 +193,12 @@ class SegmentationDataModule(pl.LightningDataModule):
     self.train_dataset, self.test_dataset, self.valid_dataset = random_split(
       dataset, [self.train_size, self.test_size, self.valid_size])
 
-  def build_dataloader(self, dataset: Dataset) -> DataLoader:
+  def build_dataloader(self, dataset: Dataset, shuffle: bool = True) -> DataLoader:
     """
     Args:
         dataset (Dataset): Dataset used in the dataloader.
+        shuffle (bool, optional): Wether the dataloader should shuffle data or not.
+          Defaults to True.
 
     Returns:
         DataLoader: Dataloader built using the specified dataset.
@@ -205,7 +207,7 @@ class SegmentationDataModule(pl.LightningDataModule):
       dataset,
       batch_size=self.batch_size,
       num_workers=os.cpu_count(),
-      shuffle=True,
+      shuffle=shuffle,
       collate_fn=self.dataset_cls.collate_fn,
       persistent_workers=True,
       prefetch_factor=20
@@ -223,11 +225,11 @@ class SegmentationDataModule(pl.LightningDataModule):
     Returns:
         DataLoader: DataLoader with validation data
     """
-    return self.build_dataloader(self.valid_dataset)
+    return self.build_dataloader(self.valid_dataset, shuffle=False)
     
   def test_dataloader(self) -> DataLoader:
     """
     Returns:
         DataLoader: DataLoader with testing data
     """
-    return self.build_dataloader(self.test_dataset)
+    return self.build_dataloader(self.test_dataset, shuffle=False)
