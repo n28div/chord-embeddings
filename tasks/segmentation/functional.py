@@ -38,7 +38,7 @@ class LSTMBaselineModel(pl.LightningModule):
     self.classification = nn.Linear(hidden_size, num_labels)
     self.softmax = nn.Softmax(dim=2)
       
-  def _predict(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor]) -> Tuple[torch.tensor, torch.loss]:
+  def _predict(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor]) -> Tuple[torch.tensor, torch.tensor]:
     """
     Perform the prediction step in the specified batch. When computing the loss
     masked elements are ignored.
@@ -48,7 +48,7 @@ class LSTMBaselineModel(pl.LightningModule):
           Input batch in the form (data, labels, padding mask)
 
     Returns:
-        Tuple[torch.tensor, torch.loss]: The prediction and the loss item
+        Tuple[torch.tensor, torch.tensor]: The prediction and the loss item
     """
     x, y, mask = batch
     x, _ = self.lstm(x)
@@ -58,7 +58,7 @@ class LSTMBaselineModel(pl.LightningModule):
     loss = nn.functional.binary_cross_entropy(x[mask != 0].float(), y[mask != 0].float())
     return x, loss
 
-  def _test(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor]) -> Tuple[torch.loss, Dict[str, float]]:
+  def _test(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor]) -> Tuple[torch.tensor, Dict[str, float]]:
     """
     Perform the prediction step in the specified batch. When computing the loss
     masked elements are ignored.
@@ -68,7 +68,7 @@ class LSTMBaselineModel(pl.LightningModule):
           Input batch in the form (data, labels, padding mask)
 
     Returns:
-        Tuple[torch.loss, Dict[str, float]]: The loss item and the dictionary of metrics
+        Tuple[torch.tensor, Dict[str, float]]: The loss item and the dictionary of metrics
     """
     metrics = defaultdict(list)
     mask = batch[-1]
@@ -97,7 +97,7 @@ class LSTMBaselineModel(pl.LightningModule):
     metrics = {k: np.mean(v) for k, v in metrics.items()}
     return loss, metrics
 
-  def training_step(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor], batch_idx: int) -> torch.loss:
+  def training_step(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor], batch_idx: int) -> torch.tensor:
     """
     Perform a training step.
 
@@ -106,13 +106,13 @@ class LSTMBaselineModel(pl.LightningModule):
         batch_idx (int): Batch index.
 
     Returns:
-        torch.loss: The torch item loss.
+        torch.tensor: The torch item loss.
     """
     _, loss = self._predict(batch)
     self.log("train_loss", loss)
     return loss
   
-  def validation_step(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor], batch_idx: int) -> torch.loss:
+  def validation_step(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor], batch_idx: int) -> torch.tensor:
     """
     Perform a validation step.
 
@@ -121,14 +121,14 @@ class LSTMBaselineModel(pl.LightningModule):
         batch_idx (int): Batch index.
 
     Returns:
-        torch.loss: The torch item loss.
+        torch.tensor: The torch item loss.
     """
     loss, metrics = self._test(batch)
     self.log("val_loss", loss)
     for k, m in metrics.items(): self.log(f"val_{k}", m)
     return loss
   
-  def test_step(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor], batch_idx: int) -> torch.loss:
+  def test_step(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor], batch_idx: int) -> torch.tensor:
     """
     Perform a test step.
 
@@ -137,7 +137,7 @@ class LSTMBaselineModel(pl.LightningModule):
         batch_idx (int): Batch index.
 
     Returns:
-        torch.loss: The torch item loss.
+        torch.tensor: The torch item loss.
     """
     loss, metrics = self._test(batch)        
     self.log("test_loss", loss)
