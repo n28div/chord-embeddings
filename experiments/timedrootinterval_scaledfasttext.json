@@ -32,7 +32,7 @@
       "value": "sum"
     },
     "max_epochs": {
-      "values": [1, 5]
+      "values": [1, 5, 15, 20, 50]
     }
   }
 }

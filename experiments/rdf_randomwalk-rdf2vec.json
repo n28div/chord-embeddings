@@ -1,0 +1,29 @@
+{
+  "method": "grid",
+  "parameters": {
+    "choco": { 
+      "value": "" 
+    },
+    "config": { 
+      "value": "" 
+    },
+    "evaluation": { 
+      "value": "" 
+    },
+    "encoding": { 
+      "value": "rdf" 
+    },
+    "model": {
+      "value": "randomwalk-rdf2vec"
+    },
+    "max_epochs": {
+      "values": [1, 5, 10]
+    },
+    "max_depth": {
+      "values": [2, 3, 4, 5, 10]
+    },
+    "max_walks": {
+      "values": [2, 5, 10, 50, 100, 500, 1000]
+    }
+  }
+}
