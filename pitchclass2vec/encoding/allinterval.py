@@ -7,11 +7,11 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
-from pitchclass2vec.encoding.rootinterval import RootIntervalDataset
+from pitchclass2vec.encoding.rootinterval import RootIntervalDataset, TimedRootIntervalDataset
 from pitchclass2vec.encoding.utils import pitchclass_to_onehot, chord_pitchclass
 from harte.harte import Harte
 
-class AllIntervalDataset(RootIntervalDataset):
+class AllIntervalMixin(object):
   @staticmethod
   @cache
   def encode_chord(chord: str) -> List[int]:
@@ -36,3 +36,11 @@ class AllIntervalDataset(RootIntervalDataset):
 
     encoding = list(map(lambda x: x.dot(2**np.arange(12)[::-1]).astype(int), onehot))
     return encoding
+
+
+class AllIntervalDataset(AllIntervalMixin, RootIntervalDataset):
+  pass
+
+
+class TimedAllIntervalDataset(AllIntervalMixin, TimedRootIntervalDataset):
+  pass

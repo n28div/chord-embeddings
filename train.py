@@ -20,6 +20,7 @@ ENCODING_MAP = {
     "root-interval": encoding.RootIntervalDataset,
     "timed-root-interval": encoding.TimedRootIntervalDataset,
     "all-interval": encoding.AllIntervalDataset,
+    "timed-all-interval": encoding.TimedAllIntervalDataset,
     "chord2vec": encoding.Chord2vecDataset,
     "text": encoding.HarteTextDataset,
     "rdf": encoding.RDFChordsDataset,
