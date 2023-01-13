@@ -103,7 +103,8 @@ class ChocoDocumentDataset(torch.utils.data.Dataset):
     
     doc_durations = doc[:, 1].astype(float)
     duration = doc_durations[positive_idxs]
-    duration = (duration - duration.min())/(duration.max() - duration.min())
+    duration = (duration - duration.min())/(duration.max() - duration.min()) \
+               if duration.std() > 0 else np.ones_like(duration)
     duration = duration.tolist()
     duration += np.random.normal(doc_durations.mean(), doc_durations.std(), self.k).tolist()
     
