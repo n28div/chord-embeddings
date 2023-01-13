@@ -14,7 +14,7 @@
       "value": "timed-all-interval" 
     },
     "model": {
-      "values": ["scaled-loss-fasttext", "emb-weighted-fasttext", "rnn-weighted-fasttext"]
+      "value": "rnn-weighted-fasttext"
     },
     "batch_size": {
       "value": 10240
@@ -27,6 +27,9 @@
     },
     "embedding_dim": {
       "value": 150
+    },
+    "hidden_size": {
+      "values": [5, 10, 50, 100, 150, 200, 1024]
     },
     "max_epochs": {
       "values": [1, 5, 15, 20, 50]

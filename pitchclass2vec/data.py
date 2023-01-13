@@ -102,7 +102,9 @@ class ChocoDocumentDataset(torch.utils.data.Dataset):
     target += [ self.encode_chord(c) for c in self.vocab[negative_idxs] ]
     
     doc_durations = doc[:, 1].astype(float)
-    duration = doc_durations[positive_idxs].tolist()
+    duration = doc_durations[positive_idxs]
+    duration = (duration - duration.min())/(duration.max() - duration.min())
+    duration = duration.tolist()
     duration += np.random.normal(doc_durations.mean(), doc_durations.std(), self.k).tolist()
     
     y = list(repeat(1, len(positive_idxs))) + list(repeat(0, len(negative_idxs)))
