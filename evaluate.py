@@ -14,7 +14,7 @@ from gensim_evaluations.methods import odd_one_out
 from train import MODEL_MAP, ENCODING_MAP
 from gensim.models import KeyedVectors
 
-def evaluate(encoding: str, model: str, path: str, config: str):
+def load_pitchclass2vec_model(encoding: str, model: str, path: str):
     if encoding == "text":
         model = KeyedVectors.load(path).wv
 
@@ -26,7 +26,10 @@ def evaluate(encoding: str, model: str, path: str, config: str):
         model = Pitchclass2VecModel(ENCODING_MAP[encoding], 
                                     MODEL_MAP[model],
                                     path)
+    return model
 
+def evaluate(encoding: str, model: str, path: str, config: str):
+    model = load_pitchclass2vec_model(encoding, model, path)
     with open(config) as f:
         config = json.load(f)
 
