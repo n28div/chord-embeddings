@@ -6,10 +6,25 @@ from pytorch_lightning.utilities.seed import seed_everything
 import pytorch_lightning as pl
 import torch.nn as nn
 import torch
+from torchmetrics.functional import dice
 import numpy as np
 
 from mir_eval.util import boundaries_to_intervals
 from mir_eval.segment import pairwise, nce
+
+class DiceLoss(nn.Module):
+  """
+  Implement the Dice loss
+  """
+  def forward(self, inputs, targets, smooth=1):
+      #flatten label and prediction tensors
+      inputs = inputs.view(-1)
+      targets = targets.view(-1)
+
+      intersection = (inputs * targets).sum()                            
+      dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
+
+      return 1 - dice
 
 class LSTMBaselineModel(pl.LightningModule):
   def __init__(self, 
@@ -37,8 +52,9 @@ class LSTMBaselineModel(pl.LightningModule):
                         hidden_size,
                         dropout=dropout,
                         num_layers=num_layers,
+                        bidirectional=True,
                         batch_first=True)
-    self.classification = nn.Linear(hidden_size, num_labels)
+    self.classification = nn.Linear(hidden_size * 2, num_labels)
     self.softmax = nn.Softmax(dim=2)
       
   def _predict(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor]) -> Tuple[torch.tensor, torch.tensor]:
@@ -59,6 +75,8 @@ class LSTMBaselineModel(pl.LightningModule):
     x = self.softmax(x)
             
     loss = nn.functional.binary_cross_entropy(x[mask != 0].float(), y[mask != 0].float())
+    #loss += DiceLoss()(x[mask != 0], y[mask != 0].int())
+    
     return x, loss
 
   def _test(self, batch: Tuple[torch.tensor, torch.tensor, torch.tensor]) -> Tuple[torch.tensor, Dict[str, float]]:
