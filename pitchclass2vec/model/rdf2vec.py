@@ -23,7 +23,7 @@ class BaseRdf2VecModel(object):
     """
     self.transformer = RDF2VecTransformer(
       Word2Vec(epochs=max_epochs),
-      walkers=[self.WALKER(max_depth, None if max_walks < 0 else max_walks, with_reverse=True, n_jobs=os.cpu_count())],
+      walkers=[self.WALKER(max_depth, None if max_walks < 0 else max_walks, with_reverse=True)],
       verbose=1
     )
     self.embeddings = None
