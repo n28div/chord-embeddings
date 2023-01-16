@@ -4,3 +4,7 @@ __pycache__/
 lightning_logs/
 wandb/
 out/
+results/
+best_models/
+.vscode/
+.ipynb_checkpoints/
