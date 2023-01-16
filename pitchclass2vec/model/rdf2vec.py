@@ -54,7 +54,7 @@ class BaseRdf2VecModel(object):
     Returns:
         np.array: Embedding of that chord.
     """
-    return self.embeddings[key]
+    return self.embeddings[key] if key in self.embeddings else self.embeddings["UNK"]
 
   def save(self, path: str):
     """
