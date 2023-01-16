@@ -75,7 +75,6 @@ class LSTMBaselineModel(pl.LightningModule):
     x = self.softmax(x)
             
     loss = nn.functional.binary_cross_entropy(x[mask != 0].float(), y[mask != 0].float())
-    #loss += DiceLoss()(x[mask != 0], y[mask != 0].int())
     
     return x, loss
 

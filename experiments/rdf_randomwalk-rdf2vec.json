@@ -17,13 +17,13 @@
       "value": "randomwalk-rdf2vec"
     },
     "max_epochs": {
-      "values": [1, 5, 10]
+      "values": [1, 10]
     },
     "max_depth": {
-      "values": [2, 3, 4, 5, 10]
+      "values": [4, 10]
     },
     "max_walks": {
-      "values": [2, 5, 10, 50, 100, 500, 1000]
+      "values": [2, 5, 10, 50, 100]
     }
   }
 }

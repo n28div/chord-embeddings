@@ -191,7 +191,9 @@ class SegmentationDataModule(pl.LightningDataModule):
     """
     dataset = self.dataset_cls(self.pitchclass2vec)
     self.train_dataset, self.test_dataset, self.valid_dataset = random_split(
-      dataset, [self.train_size, self.test_size, self.valid_size])
+      dataset, 
+      [self.train_size, self.test_size, self.valid_size],
+      generator=torch.Generator().manual_seed(42))
 
   def build_dataloader(self, dataset: Dataset, shuffle: bool = True) -> DataLoader:
     """
